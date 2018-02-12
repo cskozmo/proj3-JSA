@@ -33,10 +33,10 @@
  integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS"
  crossorigin="anonymous">
 </script>
-
 <!-- Our own css file.  Note how we can link directly here and not -->
 <!-- write any routing code in the Flask application. -->
 <link rel="stylesheet" href="/static/jumble.css" />
+
 
 </head>
 
@@ -80,11 +80,10 @@
 <br />
 <div class="row">
   <div class="col-xs-6 text-center">
-  <form id="entry" method="POST" action="/_check">
+  <form id="entry" >
     <label for="attempt">Word:</label>
     <input id="attempt" name="attempt" type="text" width="15"
       autocomplete="off"  autofocus />
-    <input type="submit" name="try" />
   </form>
 </div></div>
 
@@ -94,21 +93,110 @@
 <h2>You found </h2>
 <p id="results">
   {% for match in session.matches %}
-  {{ match }} 
+  {{ match }}
   {% endfor %}
 </p>
 {% endif %}
 
 
-{% with messages = get_flashed_messages() %}
-  {% if messages %}
-    <!-- Mismatch, already found, etc. "flashed" from Python -->
-    {% for message in messages %}
-      <p class="message">{{ message }}</p>
-    {% endfor %}
-  {% endif %}
-{% endwith %}
+      <p id="message"></p>
+      <p id="found"></p>
 
+<script>
+var found = "Words Found: <br />";
+var win = 'Wow! You really did it. Click <a href="javascript:window.location.reload(true)">here</a> to play again.'
+// Suppress normal form submission
+$("#entry").submit( function(event) {
+   event.preventDefault();
+  });
+
+// On each keystroke, ask the server whether the current
+// word is long enough.
+//
+// We use 'keyup' because the form value
+// is updated before that event is generated.
+// keypress is triggered before the input field has been
+// updated.  Be aware that we'll see non-character keys like
+// shift and control, so make sure whatever you do with the
+// event does not depend on it being a letter.
+//
+$("#attempt").keyup(function(event) {
+   var txt = $("#attempt").val();  // Current content of the input field
+   var keycode = event.which;      // They key that just went up
+   var letter = String.fromCharCode(keycode);
+
+   // That letter might not be a letter ... it could be the
+   // the backspace key, or even the shift key, because 'keyup'
+   // catches all kinds of keys.  (Also, the difference between
+   // upper and lower case comes from state of shift key + key code,
+   // so ignoring the shift key we get only the upper case letters.
+
+   if (! "ABCDEFGHIJKLMNOPQRSTUVWXYZ".includes(letter) || txt == "") { return }
+
+
+   $.getJSON( "/_check", { text: txt },
+              function(data) {
+                rsval = data.result;
+                console.log("rsval: " + rsval);
+
+                if (rsval == "keep_going") {
+                  $("#message").html("Nice, you got '"+ txt +"'.");
+                  $("div:contains(' " + txt + " ')").filter(function() {
+                      return $(this).children().length === 0;  // exclude divs with children
+                  }).text(function(index, text) {
+                      return text.replace(txt, '');
+                  });
+                  found += txt + " <br />";
+                  $("#found").html(found);
+                  $("#attempt").val("");
+
+                }
+                else if (rsval == "success") {
+                  $("div:contains(' " + txt + " ')").filter(function() {
+                      return $(this).children().length === 0;  // exclude divs with children
+                  }).text(function(index, text) {
+                      return text.replace(txt, '');
+                  });
+                  found += txt + " <br />";
+                  $("#found").html(found);
+                  $("#attempt").val("");
+                  $("#message").html(win);
+                }
+                else {
+                  $("#message").html(rsval);
+                }
+                showTiles(txt);
+               }
+           );
+   });
+
+
+
+// Demonstration of how we can insert graphical elements
+// into a page, possibly building up the URLs of the elements
+// dynamically.  In this case I have a set of Scrabble tiles with
+// point values and a consistent naming scheme that allows me to
+// generate a URL for each letter.  Browsers should cache the graphics
+// files so that http requests are sent only the first time each
+// element is encountered.
+//
+function showTiles(text) {
+   text = text.toUpperCase();  // tiles are letter-A.png, etc.
+   tiles_html = "";  // Build up the html text of links
+   for (var i=0; i < text.length; i++) {
+       letter = text.charAt(i);
+       if (! "ABCDEFGHIJKLMNOPQRSTUVWXYZ".includes(letter)) {
+          continue;
+       }
+       var tileURL = "/static/img/letter-" + letter + ".png";
+       var tileLink = "<img src='" + tileURL +
+           "' style='border: 0px; margin: 0px;'/>";
+       tiles_html = tiles_html + tileLink;
+    }
+    $("#tiles").html(tiles_html);
+    // alert("Inserted html: " + tiles_html);
+}
+</script>
 
 
  </div> <!-- container -->

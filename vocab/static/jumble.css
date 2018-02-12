@@ -1,15 +1,25 @@
-/* 
- * Styles for vocabulary program. 
- * 
- * This may be used in combination with 
- * Twitter Bootstrap style sheets, which 
+/*
+ * Styles for vocabulary program.
+ *
+ * This may be used in combination with
+ * Twitter Bootstrap style sheets, which
  * provide responsive design for mobile
- * devices, so we don't want to mess up 
+ * devices, so we don't want to mess up
  * layout and text sizes here.  Use this
- * style sheet mainly for minor attributes 
- * like text color, italics, etc. 
+ * style sheet mainly for minor attributes
+ * like text color, italics, etc.
  */
 
-.message { 
+#message {
     color: red;
+    font-weight: bold;
+    font-family: monospace;
+    font-size: 18px;
+}
+
+#found {
+    color: blue;
+    font-weight: bold;
+    font-family: monospace;
+    font-size: 18px;
 }
